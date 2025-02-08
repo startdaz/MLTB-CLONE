@@ -109,7 +109,7 @@ def add_handlers():
     TgClient.bot.add_handler(
         MessageHandler(
             remove_from_queue,
-            filters=command(BotCommands.ForceStartCommand, case_sensitive=True)
+            filters=regex(rf"^/{BotCommands.ForceStartCommand[0]}(_\w+)?(?!all)")
             & CustomFilters.authorized,
         )
     )
