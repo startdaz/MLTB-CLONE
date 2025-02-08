@@ -105,7 +105,7 @@ async def remove_from_queue(_, message):
             await send_message(message, "This is not an active task!")
             return
     elif len(msg) in {1, 2}:
-        msg = f"""Reply to an active Command message which was used to start the download/upload.
+        msg = f"Reply to an active Command message which was used to start the download/upload.
 <code>/{BotCommands.ForceStartCommand[0]}</code> fd (to remove it from download queue) or fu (to remove it from upload queue) or nothing to start remove it from both download and upload queue.
 Also send <code>/{BotCommands.ForceStartCommand[0]} GID</code> fu|fd or obly gid to force start by removeing the task rom queue!
 Examples:
@@ -114,7 +114,7 @@ Examples:
 By reply to task cmd:
 <code>/{BotCommands.ForceStartCommand[1]}</code> (force download and upload)
 <code>/{BotCommands.ForceStartCommand[1]}</code> fd (force download)
-"""
+"
         await send_message(message, msg)
         return
     if (
