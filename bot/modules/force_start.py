@@ -17,6 +17,82 @@ from ..helper.ext_utils.task_manager import start_dl_from_queued, start_up_from_
 @new_task
 async def remove_from_queue(_, message):
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
+    msg = message.text.split('_', maxsplit=1)
+    
+    if len(msg) > 1:
+        cmd_data = msg[1].split('@', maxsplit=1)
+        gid = cmd_data[0]
+        task = await get_task_by_gid(gid)
+        if task is None:
+            await send_message(message, f"<b>Tugas dengan ID</b> <code>{gid}</code> <b>tidak ditemukan!</b>")
+            return
+    elif reply_to_id := message.reply_to_message_id:
+        async with task_dict_lock:
+            task = task_dict.get(reply_to_id)
+        if task is None:
+            await send_message(message, "<b>Bukan Tugas Aktif!</b>")
+            return
+    elif len(msg) == 1:
+        msg = (
+            "<b>Balas ke pesan perintah yang digunakan untuk memulai Tugas</b> atau "
+            f"kirim <code>/{BotCommands.ForceStartCommand[0]} atau /{BotCommands.ForceStartCommand[1]} GID</code> "
+            "<b>untuk memulai paksa tugas dari antrean!</b>\n\n"
+            "<b>Contoh:</b>\n"
+            f"<code>/{BotCommands.ForceStartCommand[1]}</code> GID fu (paksa upload)\n"
+            f"<code>/{BotCommands.ForceStartCommand[1]}</code> GID fd (paksa download)\n"
+            f"<code>/{BotCommands.ForceStartCommand[1]}</code> GID (paksa download & upload)\n"
+            "<b>Atau dengan membalas ke pesan perintah tugas:</b>\n"
+            f"<code>/{BotCommands.ForceStartCommand[1]}</code> (paksa download & upload)\n"
+            f"<code>/{BotCommands.ForceStartCommand[1]}</code> fd (paksa download saja)"
+        )
+        await send_message(message, msg)
+        return
+    
+    if (
+        Config.OWNER_ID != user_id
+        and task.listener.user_id != user_id
+        and (user_id not in user_data or not user_data[user_id].get("is_sudo"))
+    ):
+        await send_message(message, "<b>Bukan tugas dari Anda!</b>")
+        return
+    
+    listener = task.listener
+    msg = ""
+    
+    async with queue_dict_lock:
+        if "_fu" in message.text:
+            listener.force_upload = True
+            if listener.mid in queued_up:
+                await start_up_from_queued(listener.mid)
+                msg = "<b>Tugas telah dipaksa untuk diunggah!</b>"
+            else:
+                msg = "<b>Mode paksa upload diaktifkan untuk tugas ini!</b>"
+        elif "_fd" in message.text:
+            listener.force_download = True
+            if listener.mid in queued_dl:
+                await start_dl_from_queued(listener.mid)
+                msg = "<b>Tugas telah dipaksa untuk diunduh!</b>"
+            else:
+                msg = "<b>Tugas ini tidak ada dalam antrean unduhan!</b>"
+        else:
+            listener.force_download = True
+            listener.force_upload = True
+            if listener.mid in queued_up:
+                await start_up_from_queued(listener.mid)
+                msg = "<b>Tugas telah dipaksa untuk diunggah!</b>"
+            elif listener.mid in queued_dl:
+                await start_dl_from_queued(listener.mid)
+                msg = "<b>Tugas telah dipaksa untuk diunduh, dan akan diunggah setelah selesai!</b>"
+            else:
+                msg = "<b>Tugas ini tidak ada dalam antrean!</b>"
+    
+    if msg:
+        await send_message(message, msg)
+
+"""
+@new_task
+async def remove_from_queue(_, message):
+    user_id = message.from_user.id if message.from_user else message.sender_chat.id
     msg = message.text.split()
     status = msg[1] if len(msg) > 1 and msg[1] in ["fd", "fu"] else ""
     if status and len(msg) > 2 or not status and len(msg) > 1:
@@ -81,3 +157,4 @@ By reply to task cmd:
                 msg = "This task not in queue!"
     if msg:
         await send_message(message, msg)
+"""
