@@ -19,7 +19,6 @@ async def remove_from_queue(_, message):
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     msg = message.text.split('_', maxsplit=1)
     
-    # Extracting GID and status from the message (if available)
     if len(msg) > 1:
         cmd_data = msg[1].split('@', maxsplit=1)
         gid = cmd_data[0]
@@ -28,7 +27,6 @@ async def remove_from_queue(_, message):
         status = ""
         gid = msg[0].split()[1] if len(msg[0].split()) > 1 else ""
     
-    # If no GID is found, return a message
     if not gid:
         await send_message(message, "GID is missing!")
         return
