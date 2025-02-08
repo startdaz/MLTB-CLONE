@@ -30,7 +30,7 @@ async def cancel(_, message):
             multi_tags.discard(gid)
             return
         else:
-            task = await getTaskByGid(gid)
+            task = await get_task_by_gid(gid)
             if task is None:
                 await sendMessage(message, f"<b>Tugas dengan ID</b> <code>{gid}</code> <b>tidak ditemukan!</b>")
                 return
