@@ -19,73 +19,70 @@ async def remove_from_queue(_, message):
     user_id = message.from_user.id if message.from_user else message.sender_chat.id
     msg = message.text.split('_', maxsplit=1)
     
+    # Extracting GID and status from the message (if available)
     if len(msg) > 1:
         cmd_data = msg[1].split('@', maxsplit=1)
         gid = cmd_data[0]
-        task = await get_task_by_gid(gid)
-        if task is None:
-            await send_message(message, f"<b>Tugas dengan ID</b> <code>{gid}</code> <b>tidak ditemukan!</b>")
-            return
-    elif reply_to_id := message.reply_to_message_id:
+        status = cmd_data[1] if len(cmd_data) > 1 and cmd_data[1] in ["fd", "fu"] else ""
+    else:
+        status = ""
+        gid = msg[0].split()[1] if len(msg[0].split()) > 1 else ""
+    
+    # If no GID is found, return a message
+    if not gid:
+        await send_message(message, "GID is missing!")
+        return
+    
+    task = await get_task_by_gid(gid)
+    if task is None:
+        await send_message(message, f"GID: <code>{gid}</code> Not Found.")
+        return
+
+    if reply_to_id := message.reply_to_message_id:
         async with task_dict_lock:
             task = task_dict.get(reply_to_id)
         if task is None:
-            await send_message(message, "<b>Bukan Tugas Aktif!</b>")
+            await send_message(message, "This is not an active task!")
             return
-    elif len(msg) == 1:
-        msg = (
-            "<b>Balas ke pesan perintah yang digunakan untuk memulai Tugas</b> atau "
-            f"kirim <code>/{BotCommands.ForceStartCommand[0]} atau /{BotCommands.ForceStartCommand[1]} GID</code> "
-            "<b>untuk memulai paksa tugas dari antrean!</b>\n\n"
-            "<b>Contoh:</b>\n"
-            f"<code>/{BotCommands.ForceStartCommand[1]}</code> GID fu (paksa upload)\n"
-            f"<code>/{BotCommands.ForceStartCommand[1]}</code> GID fd (paksa download)\n"
-            f"<code>/{BotCommands.ForceStartCommand[1]}</code> GID (paksa download & upload)\n"
-            "<b>Atau dengan membalas ke pesan perintah tugas:</b>\n"
-            f"<code>/{BotCommands.ForceStartCommand[1]}</code> (paksa download & upload)\n"
-            f"<code>/{BotCommands.ForceStartCommand[1]}</code> fd (paksa download saja)"
-        )
-        await send_message(message, msg)
-        return
     
     if (
         Config.OWNER_ID != user_id
         and task.listener.user_id != user_id
         and (user_id not in user_data or not user_data[user_id].get("is_sudo"))
     ):
-        await send_message(message, "<b>Bukan tugas dari Anda!</b>")
+        await send_message(message, "This task is not for you!")
         return
-    
+
     listener = task.listener
     msg = ""
     
     async with queue_dict_lock:
-        if "_fu" in message.text:
+        if status == "fu":
             listener.force_upload = True
             if listener.mid in queued_up:
                 await start_up_from_queued(listener.mid)
-                msg = "<b>Tugas telah dipaksa untuk diunggah!</b>"
+                msg = "Task has been force started to upload!"
             else:
-                msg = "<b>Mode paksa upload diaktifkan untuk tugas ini!</b>"
-        elif "_fd" in message.text:
+                msg = "Force upload enabled for this task!"
+        elif status == "fd":
             listener.force_download = True
             if listener.mid in queued_dl:
                 await start_dl_from_queued(listener.mid)
-                msg = "<b>Tugas telah dipaksa untuk diunduh!</b>"
+                msg = "Task has been force started to download only!"
             else:
-                msg = "<b>Tugas ini tidak ada dalam antrean unduhan!</b>"
+                msg = "This task is not in the download queue!"
         else:
             listener.force_download = True
             listener.force_upload = True
             if listener.mid in queued_up:
                 await start_up_from_queued(listener.mid)
-                msg = "<b>Tugas telah dipaksa untuk diunggah!</b>"
+                msg = "Task has been force started to upload!"
             elif listener.mid in queued_dl:
                 await start_dl_from_queued(listener.mid)
-                msg = "<b>Tugas telah dipaksa untuk diunduh, dan akan diunggah setelah selesai!</b>"
+                msg = "Task has been force started to download, and upload will start once the download finishes!"
             else:
-                msg = "<b>Tugas ini tidak ada dalam antrean!</b>"
-    
+                msg = "This task is not in the queue!"
+
     if msg:
         await send_message(message, msg)
 
