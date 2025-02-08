@@ -11,8 +11,7 @@ from ... import (
 )
 from ...core.config_manager import Config
 from .bot_utils import sync_to_async
-from ..telegram_helper.button_build import ButtonMaker
-from ..helper.telegram_helper.bot_commands import BotCommands
+from ..telegram_helper.button_build import ButtonMaker, BotCommands
 
 SIZE_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]
 
