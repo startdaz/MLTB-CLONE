@@ -32,27 +32,27 @@ async def cancel(_, message):
         else:
             task = await get_task_by_gid(gid)
             if task is None:
-                await sendMessage(message, f"<b>Tugas dengan ID</b> <code>{gid}</code> <b>tidak ditemukan!</b>")
+                await send_message(message, f"<b>Tugas dengan ID</b> <code>{gid}</code> <b>tidak ditemukan!</b>")
                 return
     elif reply_to_id := message.reply_to_message_id:
         async with task_dict_lock:
             task = task_dict.get(reply_to_id)
         if task is None:
-            await sendMessage(message, "<b>Bukan Tugas Aktif!</b>")
+            await send_message(message, "<b>Bukan Tugas Aktif!</b>")
             return
     elif len(msg) == 1:
         msg = (
         "<b>Balas ke pesan perintah saat digunakan untuk memulai Tugas</b>" \
         f" <b>atau kirim</b> <code>/{BotCommands.CancelTaskCommand[0]} atau /{BotCommands.CancelTaskCommand[1]} GID</code> <b>untuk membatalkan Tugas!</b>"
         )
-        await sendMessage(message, msg)
+        await send_message(message, msg)
         return
     if (
-        OWNER_ID != user_id
+        Config.OWNER_ID != user_id
         and task.listener.user_id != user_id
         and (user_id not in user_data or not user_data[user_id].get("is_sudo"))
     ):
-        await sendMessage(message, "<b>Bukan Tugas darimu!</b>")
+        await send_message(message, "<b>Bukan Tugas darimu!</b>")
         return
     obj = task.task()
     await obj.cancel_task()
