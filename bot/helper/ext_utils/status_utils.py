@@ -225,7 +225,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             msg += f" | <b>Time: </b>{task.seeding_time()}"
         else:
             msg += f"\n<b>Size: </b>{task.size()}"
-        msg += f"\n<b>CGid: /{BotCommands.CancelTaskCommand[0]}_{task.gid()}"
+        msg += f"\n<b>CGid: /{BotCommands.CancelTaskCommand[0]}_{task.gid()}\n\n"
 #        msg += f"\n<b>FGid: /{BotCommands.ForceStartCommand[0]}_{task.gid()}\n\n"
 
     if len(msg) == 0:
