@@ -1,7 +1,7 @@
 from logging import getLogger
 from os import path as ospath, listdir
 from re import search as re_search
-from secrets import token_urlsafe
+from secrets import token_hex
 from yt_dlp import YoutubeDL, DownloadError
 
 from .... import task_dict_lock, task_dict
@@ -190,7 +190,7 @@ class YoutubeDLHelper:
             self.opts["ignoreerrors"] = True
             self.is_playlist = True
 
-        self._gid = token_urlsafe(10)
+        self._gid = token_hex(5)
 
         await self._on_download_start()
 
